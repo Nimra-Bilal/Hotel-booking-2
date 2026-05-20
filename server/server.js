@@ -4,9 +4,17 @@ import dotenv from "dotenv";
 import connectDB from "./configs/db.js";
 import { clerkMiddleware } from '@clerk/express'
 import clerkWebhooks from "./controllers/clerkWebHooks.js";
+import userRouter from "./routes/userRoutes.js";
+import hotelRouter from "./routes/hotelRoutes.js";
+import connectCloudinary from "./configs/cloudinary.js";
+import roomRouter from "./routes/roomRoutes.js";
+import bookingRouter from "./routes/bookingRoutes.js";
+
 dotenv.config();
 
 connectDB();
+connectCloudinary();
+
 const app = express();
 
 app.use(cors());
@@ -24,6 +32,11 @@ app.use("/api/clerk", clerkWebhooks);
 app.get("/", (req, res) => {
     res.send("Hello API is Working! blaaaaaa");
 });
+app.use("/api/user", userRouter);
+app.use("/api/hotel", hotelRouter);
+app.use("/api/room", roomRouter);
+app.use("/api/booking", bookingRouter);
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
