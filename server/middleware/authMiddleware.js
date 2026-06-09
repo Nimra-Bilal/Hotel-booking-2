@@ -1,15 +1,41 @@
+// import User from "../models/User.js";
+
+// // Middleware to check if the user is authenticated
+// export const protect = async (req, res, next) => {
+//     const {userId} = req.auth;
+//     if (!userId) {
+//         return res.status(401).json({ success: false,  message: "Unauthorized" });
+//     }
+// else {
+//     const user = await User.findById(userId);
+// req.user = user;
+// next();
+
+// }
+// }
+
+
 import User from "../models/User.js";
 
 // Middleware to check if the user is authenticated
 export const protect = async (req, res, next) => {
-    const {userId} = req.auth;
-    if (!userId) {
-        return res.status(401).json({ success: false,  message: "Unauthorized" });
+    try {
+        const { userId } = req.auth;
+        
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized - No user ID" });
+        }
+        
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(401).json({ success: false, message: "Unauthorized - User not found" });
+        }
+        
+        req.user = user;
+        next();
+    } catch (error) {
+        console.error("Auth middleware error:", error);
+        res.status(401).json({ success: false, message: "Unauthorized - Invalid token" });
     }
-else {
-    const user = await User.findById(userId);
-req.user = user;
-next();
-
-}
 }

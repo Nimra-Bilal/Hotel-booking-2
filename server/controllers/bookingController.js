@@ -68,17 +68,51 @@ const booking = await Booking.create(
     }
 }
 
-//api to get all bookings from a user
-//GET /api/bookings/user
-export const getUserBookings = async (req, res) => {
+// //api to get all bookings from a user
+// //GET /api/bookings/user
+// export const getUserBookings = async (req, res) => {
+//     try {
+//         const user = req.user._id;
+//         const bookings = await Booking.find({user}).populate("room").populate("room hotel").sort({ createdAt: -1 });
+//         res.json({ success: true, bookings });
+//     } catch (error) {
+//         res.status(500).json({ success: false, message: "failed to fetch bookings" });
+//     }
+// }
+
+export const getHotelBookings = async (req, res) => {
     try {
-        const user = req.user._id;
-        const bookings = await Booking.find({user}).populate("room").populate("room hotel").sort({ createdAt: -1 });
-        res.json({ success: true, bookings });
+        const hotel = await Hotel.findOne({ owner: req.user._id }); // FIXED: Use req.user._id
+        
+        if (!hotel) {
+            return res.status(404).json({ success: false, message: "No Hotel found" });
+        }
+        
+        const bookings = await Booking.find({ hotel: hotel._id })
+            .populate("room")
+            .populate("hotel")
+            .populate("user")
+            .sort({ createdAt: -1 });
+            
+        const totalBookings = bookings.length;
+        const totalRevenue = bookings.reduce((acc, booking) => acc + booking.totalPrice, 0);
+        
+        res.json({ 
+            success: true, 
+            bookings, 
+            totalBookings, 
+            totalRevenue,
+            dashboardData: { totalBookings, totalRevenue, bookings }
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: "failed to fetch bookings" });
+        res.status(500).json({ 
+            success: false, 
+            message: "Failed to fetch bookings",
+            error: error.message 
+        });
     }
 }
+
 
 export const getHotelBookings = async (req, res) => {
     try {
@@ -97,19 +131,39 @@ export const getHotelBookings = async (req, res) => {
     }
 }
 
-//api to cancel a booking
-//POST /api/bookings/cancel
+// //api to cancel a booking
+// //POST /api/bookings/cancel
+// export const cancelBooking = async (req, res) => {
+//     try {
+//         const { bookingId } = req.body;
+//         const booking = await Booking.find
+//         if (!booking) {
+//             return res.status(404).json({ success: false, message: "Booking not found" });
+//         }
+//         booking.status = "cancelled";
+//         await booking.save();
+//         res.json({ success: true, message: "Booking cancelled successfully" });
+//     } catch (error) {
+//         res.status(500).json({ success: false, message: "failed to cancel booking" });      
+//     }
+//     }
+
+
+// api to cancel a booking
 export const cancelBooking = async (req, res) => {
     try {
         const { bookingId } = req.body;
-        const booking = await Booking.find
+        // FIXED: Use findById instead of find
+        const booking = await Booking.findById(bookingId);
+        
         if (!booking) {
             return res.status(404).json({ success: false, message: "Booking not found" });
         }
+        
         booking.status = "cancelled";
         await booking.save();
         res.json({ success: true, message: "Booking cancelled successfully" });
     } catch (error) {
-        res.status(500).json({ success: false, message: "failed to cancel booking" });      
+        res.status(500).json({ success: false, message: error.message });      
     }
-    }
+}
